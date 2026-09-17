@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<index version="1" name="RR REAPER Scripts">
+
+  <category name="Scripts">
+
+    <reapack name="RR_GOTS_CSV_To_Project.lua" type="script">
+      <description>Import CSV data to a REAPER project</description>
+      <version name="1.0" author="Rahul Ranganath" time="2026-09-17T00:00:00Z">
+        <changelog>Initial release</changelog>
+        <source main="true">https://raw.github-ca.corp.zynga.com/rahul-ranganath/RahulR_ReaperScripts/main/Scripts/RR_GOTS_CSV_To_Project.lua</source>
+      </version>
+    </reapack>
+
+    <reapack name="RR_GOTS_NameTracks_FromFirst_Item.lua" type="script">
+      <description>Name tracks based on the first item in each track</description>
+      <version name="1.0" author="Rahul Ranganath" time="2026-09-17T00:00:00Z">
+        <changelog>Initial release</changelog>
+        <source main="true">https://raw.github-ca.corp.zynga.com/rahul-ranganath/RahulR_ReaperScripts/main/Scripts/RR_GOTS_NameTracks_FromFirst_Item.lua</source>
+      </version>
+    </reapack>
+
+    <reapack name="RR_GOTS_QA_AudioChecks.lua" type="script">
+      <description>QA audio checks for GOTS projects</description>
+      <version name="1.0" author="Rahul Ranganath" time="2026-09-17T00:00:00Z">
+        <changelog>Initial release</changelog>
+        <source main="true">https://raw.github-ca.corp.zynga.com/rahul-ranganath/RahulR_ReaperScripts/main/Scripts/RR_GOTS_QA_AudioChecks.lua</source>
+      </version>
+    </reapack>
+
+    <reapack name="RR_GOTS_VO_Tool.lua" type="script">
+      <description>Voice over tool for GOTS projects</description>
+      <version name="1.0" author="Rahul Ranganath" time="2026-09-17T00:00:00Z">
+        <changelog>Initial release</changelog>
+        <source main="true">https://raw.github-ca.corp.zynga.com/rahul-ranganath/RahulR_ReaperScripts/main/Scripts/RR_GOTS_VO_Tool.lua</source>
+      </version>
+    </reapack>
+
+    <reapack name="RR_RandomPluginChain.lua" type="script">
+      <description>Randomise plugin chains on selected tracks</description>
+      <version name="1.0" author="Rahul Ranganath" time="2026-09-17T00:00:00Z">
+        <changelog>Initial release</changelog>
+        <source main="true">https://raw.github-ca.corp.zynga.com/rahul-ranganath/RahulR_ReaperScripts/main/Scripts/RR_RandomPluginChain.lua</source>
+      </version>
+    </reapack>
+
+    <reapack name="RR_ReaUnrealCues.lua" type="script">
+      <description>Manage and export audio cues for Unreal Engine</description>
+      <version name="1.0" author="Rahul Ranganath" time="2026-09-17T00:00:00Z">
+        <changelog>Initial release</changelog>
+        <source main="true">https://raw.github-ca.corp.zynga.com/rahul-ranganath/RahulR_ReaperScripts/main/Scripts/RR_ReaUnrealCues.lua</source>
+      </version>
+    </reapack>
+
+    <reapack name="RR_RemoveGapsAcrossTracks.lua" type="script">
+      <description>Remove gaps between items across all tracks</description>
+      <version name="1.0" author="Rahul Ranganath" time="2026-09-17T00:00:00Z">
+        <changelog>Initial release</changelog>
+        <source main="true">https://raw.github-ca.corp.zynga.com/rahul-ranganath/RahulR_ReaperScripts/main/Scripts/RR_RemoveGapsAcrossTracks.lua</source>
+      </version>
+    </reapack>
+
+    <reapack name="RR_UnityAudioBridge.lua" type="script">
+      <description>Bridge tool for sending audio data to Unity</description>
+      <version name="1.0" author="Rahul Ranganath" time="2026-09-17T00:00:00Z">
+        <changelog>Initial release</changelog>
+        <source main="true">https://raw.github-ca.corp.zynga.com/rahul-ranganath/RahulR_ReaperScripts/main/Scripts/RR_UnityAudioBridge.lua</source>
+      </version>
+    </reapack>
+
+  </category>
+
+</index>

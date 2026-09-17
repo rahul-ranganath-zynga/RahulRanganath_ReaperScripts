@@ -7,7 +7,7 @@
       <description>Import CSV data to a REAPER project</description>
       <version name="1.0" author="Rahul Ranganath" time="2026-09-17T00:00:00Z">
         <changelog>Initial release</changelog>
-        <source main="true">https://raw.github-ca.corp.zynga.com/rahul-ranganath/RahulR_ReaperScripts/main/Scripts/RR_GOTS_CSV_To_Project.lua</source>
+        <source main="true">https://raw.githubusercontent.com/rahul-ranganath-zynga/RahulRanganath_ReaperScripts/main/Scripts/RR_GOTS_CSV_To_Project.lua</source>
       </version>
     </reapack>
 
@@ -15,7 +15,7 @@
       <description>Name tracks based on the first item in each track</description>
       <version name="1.0" author="Rahul Ranganath" time="2026-09-17T00:00:00Z">
         <changelog>Initial release</changelog>
-        <source main="true">https://raw.github-ca.corp.zynga.com/rahul-ranganath/RahulR_ReaperScripts/main/Scripts/RR_GOTS_NameTracks_FromFirst_Item.lua</source>
+        <source main="true">https://raw.githubusercontent.com/rahul-ranganath-zynga/RahulRanganath_ReaperScripts/main/Scripts/RR_GOTS_NameTracks_FromFirst_Item.lua</source>
       </version>
     </reapack>
 
@@ -23,7 +23,7 @@
       <description>QA audio checks for GOTS projects</description>
       <version name="1.0" author="Rahul Ranganath" time="2026-09-17T00:00:00Z">
         <changelog>Initial release</changelog>
-        <source main="true">https://raw.github-ca.corp.zynga.com/rahul-ranganath/RahulR_ReaperScripts/main/Scripts/RR_GOTS_QA_AudioChecks.lua</source>
+        <source main="true">https://raw.githubusercontent.com/rahul-ranganath-zynga/RahulRanganath_ReaperScripts/main/Scripts/RR_GOTS_QA_AudioChecks.lua</source>
       </version>
     </reapack>
 
@@ -31,7 +31,7 @@
       <description>Voice over tool for GOTS projects</description>
       <version name="1.0" author="Rahul Ranganath" time="2026-09-17T00:00:00Z">
         <changelog>Initial release</changelog>
-        <source main="true">https://raw.github-ca.corp.zynga.com/rahul-ranganath/RahulR_ReaperScripts/main/Scripts/RR_GOTS_VO_Tool.lua</source>
+        <source main="true">https://raw.githubusercontent.com/rahul-ranganath-zynga/RahulRanganath_ReaperScripts/main/Scripts/RR_GOTS_VO_Tool.lua</source>
       </version>
     </reapack>
 
@@ -39,7 +39,7 @@
       <description>Randomise plugin chains on selected tracks</description>
       <version name="1.0" author="Rahul Ranganath" time="2026-09-17T00:00:00Z">
         <changelog>Initial release</changelog>
-        <source main="true">https://raw.github-ca.corp.zynga.com/rahul-ranganath/RahulR_ReaperScripts/main/Scripts/RR_RandomPluginChain.lua</source>
+        <source main="true">https://raw.githubusercontent.com/rahul-ranganath-zynga/RahulRanganath_ReaperScripts/main/Scripts/RR_RandomPluginChain.lua</source>
       </version>
     </reapack>
 
@@ -47,7 +47,7 @@
       <description>Manage and export audio cues for Unreal Engine</description>
       <version name="1.0" author="Rahul Ranganath" time="2026-09-17T00:00:00Z">
         <changelog>Initial release</changelog>
-        <source main="true">https://raw.github-ca.corp.zynga.com/rahul-ranganath/RahulR_ReaperScripts/main/Scripts/RR_ReaUnrealCues.lua</source>
+        <source main="true">https://raw.githubusercontent.com/rahul-ranganath-zynga/RahulRanganath_ReaperScripts/main/Scripts/RR_ReaUnrealCues.lua</source>
       </version>
     </reapack>
 
@@ -55,7 +55,7 @@
       <description>Remove gaps between items across all tracks</description>
       <version name="1.0" author="Rahul Ranganath" time="2026-09-17T00:00:00Z">
         <changelog>Initial release</changelog>
-        <source main="true">https://raw.github-ca.corp.zynga.com/rahul-ranganath/RahulR_ReaperScripts/main/Scripts/RR_RemoveGapsAcrossTracks.lua</source>
+        <source main="true">https://raw.githubusercontent.com/rahul-ranganath-zynga/RahulRanganath_ReaperScripts/main/Scripts/RR_RemoveGapsAcrossTracks.lua</source>
       </version>
     </reapack>
 
@@ -63,7 +63,7 @@
       <description>Bridge tool for sending audio data to Unity</description>
       <version name="1.0" author="Rahul Ranganath" time="2026-09-17T00:00:00Z">
         <changelog>Initial release</changelog>
-        <source main="true">https://raw.github-ca.corp.zynga.com/rahul-ranganath/RahulR_ReaperScripts/main/Scripts/RR_UnityAudioBridge.lua</source>
+        <source main="true">https://raw.githubusercontent.com/rahul-ranganath-zynga/RahulRanganath_ReaperScripts/main/Scripts/RR_UnityAudioBridge.lua</source>
       </version>
     </reapack>
 

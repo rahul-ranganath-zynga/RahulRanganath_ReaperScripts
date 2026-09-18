@@ -13,6 +13,8 @@ math.randomseed(os.time())
 -- ── Persisted state ────────────────────────────────────────────────────────
 local csv_folder   = r.GetExtState("GOTVOTool", "csv_folder")
 local audio_folder = r.GetExtState("GOTVOTool", "audio_folder")
+local game_id_buf  = r.GetExtState("GOTVOTool", "game_id")
+local initials_buf = r.GetExtState("GOTVOTool", "char_initials")
 
 -- ── Runtime state ──────────────────────────────────────────────────────────
 local all_rows       = {}
@@ -136,22 +138,54 @@ local function parse_csv_line(line)
   return fields
 end
 
+-- Split into logical CSV records, keeping newlines that sit inside quotes.
+local function split_csv_records(raw)
+  local lines, current, in_quotes = {}, "", false
+  local n = #raw
+  local i = 1
+  while i <= n do
+    local c = raw:sub(i, i)
+    if c == '"' then
+      in_quotes = not in_quotes
+      current = current .. c
+    elseif (c == "\n" or c == "\r") and not in_quotes then
+      if c == "\r" and raw:sub(i + 1, i + 1) == "\n" then
+        i = i + 1
+      end
+      if current ~= "" then lines[#lines+1] = current end
+      current = ""
+    else
+      current = current .. c
+    end
+    i = i + 1
+  end
+  if current ~= "" then lines[#lines+1] = current end
+  return lines
+end
+
+local function parse_number(s)
+  s = trim(s)
+  if s == "" then return nil end
+  return tonumber((s:gsub(",", ".")))
+end
+
 local function read_csv_file(path)
   local f = io.open(path, "r")
   if not f then return nil, "Cannot open file", 0 end
-  local lines = {}
-  for line in f:lines() do
-    lines[#lines+1] = line:gsub("\r$", "")
-  end
+  local raw = f:read("*all")
   f:close()
+  if not raw or raw == "" then return nil, "Empty file", 0 end
+
+  local lines = split_csv_records(raw)
   if #lines == 0 then return nil, "Empty file", 0 end
 
   local headers = parse_csv_line(remove_bom(lines[1]))
   for i, h in ipairs(headers) do headers[i] = trim(h) end
 
   local function col(fields, name)
+    local name_lower = name:lower()
     for i, h in ipairs(headers) do
-      if h == name then return trim(fields[i] or "") end
+      if h:lower() == name_lower then return trim(fields[i] or "") end
     end
     return ""
   end
@@ -175,12 +209,12 @@ local function read_csv_file(path)
           character      = character,
           text           = text,
           source_file    = col(fields, "Source_File"),
-          start_sec      = tonumber(col(fields, "Start_Sec")),
-          end_sec        = tonumber(col(fields, "End_Sec")),
+          start_sec      = parse_number(col(fields, "Start_Sec")),
+          end_sec        = parse_number(col(fields, "End_Sec")),
           start_time     = col(fields, "Start_Time"),
           end_time       = col(fields, "End_Time"),
           season         = col(fields, "Season"),
-          rating         = tonumber(col(fields, "Top_Sentence_Rating")) or 0,
+          rating         = parse_number(col(fields, "Top_Sentence_Rating")) or 0,
           rating_reason  = col(fields, "Top_Sentence_Reason"),
           use_for_unlock = col(fields, "Use_For_Unlock"),
           confidence     = col(fields, "Speaker_Probability"),
@@ -360,6 +394,64 @@ local function draw_detail(k, val)
   r.ImGui_TextWrapped(ctx, tostring(val or ""))
 end
 
+-- ── VO naming: Vo_{Initials}-{PascalCaseLine}{GameID} ──────────────────────
+-- Example: Vo_TL-CerseiThinksTheArmyOfDeadIsAStoryGOTS164
+local INITIAL_SKIP = {
+  ser=true, lady=true, queen=true, king=true, prince=true, princess=true,
+  lord=true, of=true, the=true, a=true, an=true,
+  i=true, ii=true, iii=true, iv=true, v=true, vi=true, vii=true, viii=true,
+  ix=true, x=true,
+}
+
+local function character_initials(name)
+  local initials = {}
+  for word in (name or ""):gmatch("%S+") do
+    local clean = word:gsub("[^%a]", "")
+    if clean ~= "" and not INITIAL_SKIP[clean:lower()] then
+      initials[#initials+1] = clean:sub(1, 1):upper()
+    end
+  end
+  if #initials == 0 then
+    local letters = (name or ""):gsub("[^%a]", "")
+    if #letters >= 2 then
+      return letters:sub(1, 2):upper()
+    elseif #letters == 1 then
+      return letters:upper()
+    end
+    return "XX"
+  end
+  return table.concat(initials)
+end
+
+local function line_to_pascal(text)
+  local parts = {}
+  for word in (text or ""):gmatch("[%a%d]+") do
+    parts[#parts+1] = word:sub(1, 1):upper() .. word:sub(2):lower()
+  end
+  local s = table.concat(parts)
+  if #s > 80 then s = s:sub(1, 80) end
+  return s
+end
+
+local function sanitize_game_id(id)
+  return (id or ""):gsub("%s+", ""):gsub("[^%w%-_]", "")
+end
+
+local function sanitize_initials(s)
+  return (s or ""):gsub("[^%a%d]", ""):upper()
+end
+
+local function build_vo_name(row, game_id, initials_override)
+  local initials = sanitize_initials(initials_override)
+  if initials == "" then
+    initials = character_initials(row.character)
+  end
+  local line = line_to_pascal(row.text)
+  if line == "" then line = "Line" end
+  local gid = sanitize_game_id(game_id)
+  return "Vo_" .. initials .. "-" .. line .. gid
+end
+
 -- ── Clip import + region ──────────────────────────────────────────────────
 local function extract_clip(row)
   if not row.start_sec or not row.end_sec then
@@ -374,8 +466,7 @@ local function extract_clip(row)
     return false, "No matching audio file found for: " .. row.source_file
   end
 
-  local track_name = row.source_file:match("([^/\\]+)$") or row.source_file
-  track_name = track_name:match("^(.+)%.[^%.]+$") or track_name
+  local clip_name = build_vo_name(row, game_id_buf, initials_buf)
 
   r.Undo_BeginBlock()
 
@@ -383,7 +474,7 @@ local function extract_clip(row)
   local num_tracks = r.CountTracks(0)
   r.InsertTrackAtIndex(num_tracks, false)
   local track = r.GetTrack(0, num_tracks)
-  r.GetSetMediaTrackInfo_String(track, "P_NAME", track_name, true)
+  r.GetSetMediaTrackInfo_String(track, "P_NAME", clip_name, true)
 
   -- ── Load and validate source ──────────────────────────────────────
   local src = r.PCM_Source_CreateFromFile(audio_path)
@@ -408,6 +499,14 @@ local function extract_clip(row)
   local region_start = math.max(0,       row.start_sec - pre_roll)
   local region_end   = math.min(src_len, row.end_sec   + post_roll)
   local clip_len     = region_end - region_start
+  if clip_len <= 0 then
+    r.PCM_Source_Destroy(src)
+    r.DeleteTrack(track)
+    r.Undo_EndBlock("GOT VO import (failed)", -1)
+    return false, string.format(
+      "Clip window is outside the audio file (source is %.3fs, Start_Sec=%.3f, End_Sec=%.3f).",
+      src_len, row.start_sec, row.end_sec)
+  end
   local place_at     = project_head
 
   -- ── Create media item ─────────────────────────────────────────────
@@ -437,6 +536,7 @@ local function extract_clip(row)
 
   -- D_STARTOFFS tells REAPER where in the source file the item begins
   r.SetMediaItemTakeInfo_Value(take, "D_STARTOFFS", region_start)
+  r.GetSetMediaItemTakeInfo_String(take, "P_NAME", clip_name, true)
 
   r.UpdateArrange()
 
@@ -451,7 +551,7 @@ local function extract_clip(row)
     true,
     place_at,
     place_at + clip_len,
-    track_name,
+    clip_name,
     -1,
     region_color)
 
@@ -465,7 +565,7 @@ local function extract_clip(row)
 
   return true, string.format(
     "'%s' | placed at %.3fs → %.3fs",
-    track_name, place_at, project_head)
+    clip_name, place_at, project_head)
 end
 
 -- ── Folder picker ─────────────────────────────────────────────────────────
@@ -485,7 +585,7 @@ end
 -- avoiding a fragile call-order dependency.
 local function build_combo_entries()
   local entries = {}
-  entries[#entries+1] = {type="char", name="-- All Characters --", value=""}
+  entries[#entries+1] = {type="char", name="-- All Characters --", value="", id="all0"}
 
   local any_priority = false
   for _, g in ipairs(priority_groups) do
@@ -500,7 +600,7 @@ local function build_combo_entries()
       end
       entries[#entries+1] = {type="header", label=g.label}
       for _, c in ipairs(present) do
-        entries[#entries+1] = {type="char", name=c, value=c}
+        entries[#entries+1] = {type="char", name=c, value=c, id="prio"..tostring(#entries)}
       end
     end
   end
@@ -509,7 +609,7 @@ local function build_combo_entries()
     entries[#entries+1] = {type="header", label="All Characters"}
   end
   for _, c in ipairs(character_list) do
-    entries[#entries+1] = {type="char", name=c, value=c}
+    entries[#entries+1] = {type="char", name=c, value=c, id="all"..tostring(#entries)}
   end
 
   combo_entries = entries
@@ -577,6 +677,31 @@ local function loop()
       invalidate_audio_cache()
     end
 
+    r.ImGui_Text(ctx, "Game ID:")
+    r.ImGui_SameLine(ctx)
+    r.ImGui_PushItemWidth(ctx, 140)
+    local game_changed, new_game_id = r.ImGui_InputText(ctx, "##game_id", game_id_buf)
+    r.ImGui_PopItemWidth(ctx)
+    if game_changed then
+      game_id_buf = new_game_id
+      r.SetExtState("GOTVOTool", "game_id", game_id_buf, true)
+    end
+    r.ImGui_SameLine(ctx)
+    r.ImGui_Text(ctx, "  (suffix, e.g. GOTS164)")
+
+    r.ImGui_SameLine(ctx)
+    r.ImGui_Text(ctx, "  Initials:")
+    r.ImGui_SameLine(ctx)
+    r.ImGui_PushItemWidth(ctx, 80)
+    local init_changed, new_initials = r.ImGui_InputText(ctx, "##char_initials", initials_buf)
+    r.ImGui_PopItemWidth(ctx)
+    if init_changed then
+      initials_buf = new_initials
+      r.SetExtState("GOTVOTool", "char_initials", initials_buf, true)
+    end
+    r.ImGui_SameLine(ctx)
+    r.ImGui_Text(ctx, "  (e.g. TL — overrides CSV speaker)")
+
     r.ImGui_Separator(ctx)
 
     -- ── Filter bar ────────────────────────────────────────────────────
@@ -595,7 +720,8 @@ local function loop()
           r.ImGui_PopStyleColor(ctx)
         else
           local is_sel     = (entry.value == combo_sel_char)
-          local clicked, _ = r.ImGui_Selectable(ctx, "  " .. entry.name, is_sel)
+          local label      = "  " .. entry.name .. "##" .. (entry.id or entry.value)
+          local clicked, _ = r.ImGui_Selectable(ctx, label, is_sel)
           if clicked then
             combo_sel_char = entry.value; filter_changed = true
           end
@@ -661,23 +787,25 @@ local function loop()
     r.ImGui_Separator(ctx)
 
     -- ── Main split: list + details ────────────────────────────────────
-    local avail_h = r.ImGui_GetContentRegionAvail(ctx)
+    local avail_w, avail_h = r.ImGui_GetContentRegionAvail(ctx)
+    if not avail_h then avail_h = avail_w end
     local line_h  = r.ImGui_GetTextLineHeightWithSpacing(ctx)
-    local list_h  = avail_h - line_h - 8   -- DPI-aware space for status bar
+    local list_h  = math.max(80, (avail_h or 0) - line_h - 8)
 
-    -- List pane
-    if r.ImGui_BeginChild(ctx, "##list_pane", LIST_W, list_h, 1) then
+    -- List pane (ReaImGui: EndChild only if BeginChild returned true)
+    local list_open = r.ImGui_BeginChild(ctx, "##list_pane", LIST_W, list_h, 1)
+    if list_open then
       for i, row in ipairs(filtered_rows) do
         local idx        = i - 1
         local is_sel     = (idx == selected_line)
         local clicked, _ = r.ImGui_Selectable(ctx, row._label, is_sel, 0, LIST_W-16, 0)
         if clicked then selected_line = idx end
       end
+      r.ImGui_EndChild(ctx)
     end
-    r.ImGui_EndChild(ctx)
 
     -- Enter key triggers import when list pane has focus
-    if r.ImGui_IsItemFocused(ctx) and
+    if list_open and r.ImGui_IsItemFocused(ctx) and
        r.ImGui_IsKeyPressed(ctx, r.ImGui_Key_Enter()) then
       do_import()
     end
@@ -724,12 +852,17 @@ local function loop()
         r.ImGui_Text(ctx, "Audio:")
         r.ImGui_PopStyleColor(ctx)
         r.ImGui_TextWrapped(ctx, audio_path or "Not found")
+        r.ImGui_Separator(ctx)
+        r.ImGui_PushStyleColor(ctx, r.ImGui_Col_Text(), COLOR_LABEL)
+        r.ImGui_Text(ctx, "Import name:")
+        r.ImGui_PopStyleColor(ctx)
+        r.ImGui_TextWrapped(ctx, build_vo_name(row, game_id_buf, initials_buf))
 
       else
         r.ImGui_TextWrapped(ctx, "Select a line to see details.")
       end
+      r.ImGui_EndChild(ctx)
     end
-    r.ImGui_EndChild(ctx)
 
     -- ── Status bar ────────────────────────────────────────────────────
     r.ImGui_Separator(ctx)
@@ -737,9 +870,9 @@ local function loop()
     r.ImGui_TextWrapped(ctx, status_msg)
     r.ImGui_PopStyleColor(ctx)
 
+    r.ImGui_End(ctx)
   end -- closes: if visible then
 
-  r.ImGui_End(ctx)
   return open
 end
 
@@ -758,15 +891,27 @@ local function init()
   return true
 end
 
+local function shutdown()
+  if ctx and r.ImGui_DestroyContext then
+    r.ImGui_DestroyContext(ctx)
+    ctx = nil
+  end
+end
+
 local function main()
   if not init() then return end
   local function defer_loop()
     local ok, err = pcall(loop)
     if not ok then
       r.ShowMessageBox("Script error:\n" .. tostring(err), "GOT VO Tool", 0)
+      shutdown()
       return
     end
-    if err then r.defer(defer_loop) end
+    if err then
+      r.defer(defer_loop)
+    else
+      shutdown()
+    end
   end
   r.defer(defer_loop)
 end

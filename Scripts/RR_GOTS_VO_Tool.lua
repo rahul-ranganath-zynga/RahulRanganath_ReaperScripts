@@ -31,12 +31,6 @@ local selected_line = -1
 local pre_roll_buf  = "100"
 local post_roll_buf = "150"
 
--- project_head tracks where the next clip will be placed in project time.
--- NOTE: this is a simple counter and does not track real project state —
--- if items are moved or deleted manually in REAPER it will be out of sync.
--- Use the Reset Position button to resync.
-local project_head = 0.0
-
 local status_msg = ""
 local status_ok  = true
 
@@ -238,7 +232,6 @@ local function load_csvs()
   selected_line  = -1
   combo_entries  = {}
   combo_sel_char = ""
-  project_head   = 0.0
 
   if csv_folder == "" then
     status_msg = "No CSV folder selected."; status_ok = false; return
@@ -507,7 +500,7 @@ local function extract_clip(row)
       "Clip window is outside the audio file (source is %.3fs, Start_Sec=%.3f, End_Sec=%.3f).",
       src_len, row.start_sec, row.end_sec)
   end
-  local place_at     = project_head
+  local place_at = r.GetCursorPosition()
 
   -- ── Create media item ─────────────────────────────────────────────
   local item = r.AddMediaItemToTrack(track)
@@ -530,7 +523,7 @@ local function extract_clip(row)
   -- do NOT call PCM_Source_Destroy after this point.
   r.SetMediaItemTake_Source(take, src)
 
-  -- Place item at project_head, trimmed to the region window only
+  -- Place item at the edit cursor
   r.SetMediaItemPosition(item, place_at, false)
   r.SetMediaItemLength(item, clip_len, false)
 
@@ -555,17 +548,14 @@ local function extract_clip(row)
     -1,
     region_color)
 
-  -- ── Advance project head so next clip starts after this one ───────
-  project_head = place_at + clip_len
-
-  -- ── Move edit cursor to the placed clip ───────────────────────────
-  r.SetEditCurPos(place_at, true, false)
+  -- Leave the edit cursor at the end of the new clip so the next import follows
+  r.SetEditCurPos(place_at + clip_len, true, false)
 
   r.Undo_EndBlock("GOT VO: import + region", -1)
 
   return true, string.format(
     "'%s' | placed at %.3fs → %.3fs",
-    clip_name, place_at, project_head)
+    clip_name, place_at, place_at + clip_len)
 end
 
 -- ── Folder picker ─────────────────────────────────────────────────────────
@@ -771,12 +761,12 @@ local function loop()
     r.ImGui_Text(ctx, string.format("(%.0fms)", resolved_post))
 
     r.ImGui_SameLine(ctx)
-    r.ImGui_Text(ctx, string.format("  Next clip at: %.3fs", project_head))
+    r.ImGui_Text(ctx, string.format("  Edit cursor: %.3fs", r.GetCursorPosition()))
 
     r.ImGui_SameLine(ctx)
-    if r.ImGui_Button(ctx, "Reset Position") then
-      project_head = 0.0
-      status_msg   = "Project position reset to 0."; status_ok = true
+    if r.ImGui_Button(ctx, "Cursor to 0") then
+      r.SetEditCurPos(0.0, true, false)
+      status_msg = "Edit cursor moved to 0."; status_ok = true
     end
 
     r.ImGui_SameLine(ctx)
